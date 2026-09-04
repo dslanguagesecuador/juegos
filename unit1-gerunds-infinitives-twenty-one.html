@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Twenty-One — Unit 1 Review Game</title>
+<style>
+  :root {
+    --navy: #102040;
+    --red: #961E26;
+    --bg: #F5F6F8;
+    --card: #FFFFFF;
+    --border: #DADFE5;
+    --muted: #6B7280;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: #1A1A1A;
+    margin: 0;
+    padding: 24px 16px 60px;
+  }
+  .wrap { max-width: 900px; margin: 0 auto; }
+  header {
+    background: var(--navy);
+    color: #fff;
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-bottom: 20px;
+  }
+  header h1 { margin: 0 0 4px; font-size: 24px; font-weight: 700; }
+  header p { margin: 0; font-size: 14px; color: #C9D2E0; }
+  .players {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 18px;
+  }
+  .player-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  .player-card.active {
+    border-color: var(--red);
+    box-shadow: 0 0 0 2px rgba(150,30,38,0.15);
+  }
+  .player-name {
+    font-family: inherit;
+    font-size: 13px;
+    color: var(--muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+    border: 1px solid transparent;
+    border-radius: 5px;
+    background: transparent;
+    padding: 3px 5px;
+    width: 100%;
+    max-width: 180px;
+  }
+  .player-name:hover { border-color: var(--border); }
+  .player-name:focus {
+    outline: none;
+    border-color: var(--red);
+    background: #fff;
+    color: #1A1A1A;
+  }
+  .player-score { font-size: 30px; font-weight: 700; color: var(--navy); margin: 2px 0 8px; }
+  .score-btns button {
+    border: 1px solid var(--border);
+    background: #fff;
+    border-radius: 6px;
+    width: 34px; height: 30px;
+    font-size: 16px;
+    cursor: pointer;
+    margin-right: 6px;
+  }
+  .score-btns button:hover { background: #f0f0f0; }
+  .player-pos { font-size: 12px; color: var(--muted); margin-top: 8px; }
+  .player-pos .done { color: var(--red); font-weight: 700; }
+
+  .controls {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+  .controls button {
+    border: none;
+    border-radius: 8px;
+    padding: 10px 18px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  #btn-flip-start, #btn-move { background: var(--red); color: #fff; }
+  #btn-end-turn { background: var(--navy); color: #fff; }
+  #btn-reset { background: #fff; color: var(--navy); border: 1px solid var(--border) !important; }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  #turn-indicator {
+    text-align: center;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--navy);
+    margin-bottom: 14px;
+    min-height: 20px;
+  }
+
+  #prompt-area {
+    min-height: 90px;
+    background: #fff;
+    border: 1px dashed var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 18px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+  }
+  #prompt-area.empty { color: var(--muted); font-size: 13px; }
+  .prompt-verb { font-size: 20px; font-weight: 700; color: var(--red); text-transform: uppercase; }
+  .prompt-activity { font-size: 15px; margin-top: 4px; }
+  .prompt-hint { font-size: 12px; color: var(--muted); margin-top: 8px; }
+  #timer { font-size: 22px; font-weight: 700; color: var(--navy); margin-top: 10px; }
+  #timer.warn { color: var(--red); }
+
+  .board {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .cell {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 4px;
+    min-height: 58px;
+    flex: 1 1 12%;
+    min-width: 80px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .cell .num { font-size: 9px; color: var(--muted); }
+  .cell .verb { font-size: 11px; font-weight: 600; line-height: 1.2; color: #1A1A1A; }
+  .cell .tokens { display: flex; gap: 3px; margin-top: 3px; }
+  .token {
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    font-size: 9px;
+    font-weight: 700;
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .token.A { background: #185FA5; }
+  .token.B { background: var(--red); }
+
+  footer {
+    margin-top: 22px;
+    font-size: 12px;
+    color: var(--muted);
+    text-align: center;
+    line-height: 1.6;
+  }
+  @media (max-width: 520px) {
+    .cell { flex-basis: 22%; }
+    .players { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>Twenty-One</h1>
+    <p>Unit 1 review game — gerunds &amp; infinitives · Connectivity Level 2</p>
+  </header>
+
+  <section class="players">
+    <div class="player-card" id="card-A">
+      <input class="player-name" id="name-A" value="Player 1" maxlength="18"
+             aria-label="Player 1 name" oninput="refreshNames()">
+      <div class="player-score" id="score-A">0</div>
+      <div class="score-btns">
+        <button onclick="adjustScore('A',-1)" aria-label="Decrease Player 1 score">&minus;</button>
+        <button onclick="adjustScore('A',1)" aria-label="Increase Player 1 score">+</button>
+      </div>
+      <div class="player-pos">Square <span id="pos-A">0</span> / 21 <span id="done-A" class="done"></span></div>
+    </div>
+    <div class="player-card" id="card-B">
+      <input class="player-name" id="name-B" value="Player 2" maxlength="18"
+             aria-label="Player 2 name" oninput="refreshNames()">
+      <div class="player-score" id="score-B">0</div>
+      <div class="score-btns">
+        <button onclick="adjustScore('B',-1)" aria-label="Decrease Player 2 score">&minus;</button>
+        <button onclick="adjustScore('B',1)" aria-label="Increase Player 2 score">+</button>
+      </div>
+      <div class="player-pos">Square <span id="pos-B">0</span> / 21 <span id="done-B" class="done"></span></div>
+    </div>
+  </section>
+
+  <div id="turn-indicator">Type the players' names, then press "Flip to start" to see who goes first.</div>
+
+  <section class="controls">
+    <button id="btn-flip-start" onclick="flipToStart()">Flip to start</button>
+    <button id="btn-move" onclick="movePlayer()" disabled>Flip &amp; move</button>
+    <button id="btn-end-turn" onclick="endTurn()" disabled>End turn</button>
+    <button id="btn-reset" onclick="resetGame()">Reset game</button>
+  </section>
+
+  <div id="prompt-area" class="empty">Land on a square to see your question prompt here.</div>
+
+  <section class="board" id="board"></section>
+
+  <footer>
+    Rules: flip to see who goes first, then take turns flipping to move 1 or 2 squares. On landing, form a
+    question with the verb shown + the activity shown, using a gerund or an infinitive. Your partner answers
+    within 15 seconds. Award 1 point for a correct question and 1 point for a correct answer using the +/- buttons.
+    First to square 21 finishes — most points wins.
+  </footer>
+
+</div>
+
+<script>
+const VERBS = ["quit","would like","begin","feel like","seem","can't stand","like","practice","hate","try",
+  "need","dislike","want","start","learn","avoid","discuss","don't mind","enjoy","decide","love"];
+
+const ACTIVITIES = ["playing tennis","cooking dinner","watching movies","learning Spanish","exercising",
+  "riding a bike","reading novels","playing video games","gardening","baking cookies","collecting coins",
+  "repairing motorcycles","walking in the park","using a computer","singing","dancing","traveling abroad",
+  "painting"];
+
+const DEFAULT_NAMES = { A: "Player 1", B: "Player 2" };
+
+let state = {
+  turn: null,
+  started: false,
+  pos: { A: 0, B: 0 },
+  score: { A: 0, B: 0 },
+  finished: { A: false, B: false },
+  timerInterval: null,
+  timeLeft: 15,
+  awaitingEndTurn: false,
+};
+
+function nameFor(p) {
+  const field = document.getElementById("name-" + p);
+  const typed = field ? field.value.trim() : "";
+  return typed || DEFAULT_NAMES[p];
+}
+
+function refreshNames() {
+  if (state.started && state.turn && !state.awaitingEndTurn) {
+    document.getElementById("turn-indicator").textContent =
+      nameFor(state.turn) + "'s turn — press \"Flip & move.\"";
+  }
+}
+
+function renderBoard() {
+  const board = document.getElementById("board");
+  board.innerHTML = "";
+  VERBS.forEach((v, i) => {
+    const idx = i + 1;
+    const cell = document.createElement("div");
+    cell.className = "cell";
+    const num = document.createElement("div");
+    num.className = "num";
+    num.textContent = idx;
+    const label = document.createElement("div");
+    label.className = "verb";
+    label.textContent = v;
+    const tokens = document.createElement("div");
+    tokens.className = "tokens";
+    if (state.pos.A === idx) tokens.appendChild(makeToken("A"));
+    if (state.pos.B === idx) tokens.appendChild(makeToken("B"));
+    cell.appendChild(num);
+    cell.appendChild(label);
+    cell.appendChild(tokens);
+    board.appendChild(cell);
+  });
+}
+
+function makeToken(key) {
+  const t = document.createElement("div");
+  t.className = "token " + key;
+  t.textContent = key === "A" ? "1" : "2";
+  return t;
+}
+
+function updateScoreDisplay() {
+  document.getElementById("score-A").textContent = state.score.A;
+  document.getElementById("score-B").textContent = state.score.B;
+  document.getElementById("pos-A").textContent = state.pos.A;
+  document.getElementById("pos-B").textContent = state.pos.B;
+  document.getElementById("done-A").textContent = state.finished.A ? "— finished!" : "";
+  document.getElementById("done-B").textContent = state.finished.B ? "— finished!" : "";
+  document.getElementById("card-A").classList.toggle("active", state.turn === "A" && state.started);
+  document.getElementById("card-B").classList.toggle("active", state.turn === "B" && state.started);
+}
+
+function adjustScore(player, delta) {
+  state.score[player] = Math.max(0, state.score[player] + delta);
+  updateScoreDisplay();
+}
+
+function flipToStart() {
+  state.turn = Math.random() < 0.5 ? "A" : "B";
+  state.started = true;
+  document.getElementById("btn-flip-start").disabled = true;
+  document.getElementById("btn-move").disabled = false;
+  document.getElementById("turn-indicator").textContent =
+    nameFor(state.turn) + " goes first — press \"Flip & move.\"";
+  updateScoreDisplay();
+}
+
+function movePlayer() {
+  if (!state.started || state.awaitingEndTurn) return;
+  const p = state.turn;
+  if (state.finished[p]) { endTurn(); return; }
+
+  const roll = Math.random() < 0.5 ? 1 : 2;
+  state.pos[p] = Math.min(state.pos[p] + roll, 21);
+  if (state.pos[p] >= 21) state.finished[p] = true;
+  renderBoard();
+  updateScoreDisplay();
+
+  document.getElementById("btn-move").disabled = true;
+  state.awaitingEndTurn = true;
+
+  const verb = VERBS[state.pos[p] - 1];
+  const activity = ACTIVITIES[Math.floor(Math.random() * ACTIVITIES.length)];
+
+  const promptArea = document.getElementById("prompt-area");
+  promptArea.classList.remove("empty");
+  promptArea.innerHTML =
+    '<div style="font-size:13px;color:var(--muted);">' + nameFor(p) + " rolled " + roll + " — square " + state.pos[p] + '</div>' +
+    '<div class="prompt-verb"></div>' +
+    '<div class="prompt-activity"></div>' +
+    '<div class="prompt-hint">Ask a question using this verb + activity (gerund or infinitive). Your partner answers before time runs out.</div>' +
+    '<div id="timer">15s</div>';
+  promptArea.querySelector(".prompt-verb").textContent = verb;
+  promptArea.querySelector(".prompt-activity").textContent = "+ " + activity;
+
+  document.getElementById("btn-end-turn").disabled = false;
+  startTimer();
+
+  if (state.finished[p]) {
+    document.getElementById("turn-indicator").textContent = nameFor(p) + " reached the finish square!";
+  } else {
+    document.getElementById("turn-indicator").textContent =
+      nameFor(p) + "'s turn — ask your question, then award points and end your turn.";
+  }
+}
+
+function startTimer() {
+  clearInterval(state.timerInterval);
+  state.timeLeft = 15;
+  const timerEl = document.getElementById("timer");
+  if (timerEl) timerEl.textContent = state.timeLeft + "s";
+  state.timerInterval = setInterval(() => {
+    state.timeLeft -= 1;
+    const el = document.getElementById("timer");
+    if (!el) { clearInterval(state.timerInterval); return; }
+    el.textContent = state.timeLeft > 0 ? state.timeLeft + "s" : "Time's up!";
+    if (state.timeLeft <= 5) el.classList.add("warn");
+    if (state.timeLeft <= 0) clearInterval(state.timerInterval);
+  }, 1000);
+}
+
+function endTurn() {
+  clearInterval(state.timerInterval);
+  state.awaitingEndTurn = false;
+
+  const promptArea = document.getElementById("prompt-area");
+  promptArea.classList.add("empty");
+  promptArea.innerHTML = "Land on a square to see your question prompt here.";
+  document.getElementById("btn-end-turn").disabled = true;
+
+  if (state.finished.A && state.finished.B) {
+    let result;
+    if (state.score.A > state.score.B) {
+      result = nameFor("A") + " wins " + state.score.A + "–" + state.score.B + "!";
+    } else if (state.score.B > state.score.A) {
+      result = nameFor("B") + " wins " + state.score.B + "–" + state.score.A + "!";
+    } else {
+      result = "It's a tie, " + state.score.A + "–" + state.score.B + "!";
+    }
+    document.getElementById("turn-indicator").textContent = "Game over — " + result;
+    document.getElementById("btn-move").disabled = true;
+    updateScoreDisplay();
+    return;
+  }
+
+  let next = state.turn === "A" ? "B" : "A";
+  if (state.finished[next] && !state.finished[state.turn]) {
+    next = state.turn;
+  }
+  state.turn = next;
+
+  document.getElementById("btn-move").disabled = false;
+  document.getElementById("turn-indicator").textContent =
+    nameFor(state.turn) + "'s turn — press \"Flip & move.\"";
+  updateScoreDisplay();
+}
+
+function resetGame() {
+  clearInterval(state.timerInterval);
+  state = {
+    turn: null, started: false,
+    pos: { A: 0, B: 0 }, score: { A: 0, B: 0 },
+    finished: { A: false, B: false },
+    timerInterval: null, timeLeft: 15, awaitingEndTurn: false,
+  };
+  document.getElementById("btn-flip-start").disabled = false;
+  document.getElementById("btn-move").disabled = true;
+  document.getElementById("btn-end-turn").disabled = true;
+  document.getElementById("turn-indicator").textContent =
+    'Type the players\u2019 names, then press "Flip to start" to see who goes first.';
+  const promptArea = document.getElementById("prompt-area");
+  promptArea.classList.add("empty");
+  promptArea.innerHTML = "Land on a square to see your question prompt here.";
+  renderBoard();
+  updateScoreDisplay();
+}
+
+renderBoard();
+updateScoreDisplay();
+</script>
+</body>
+</html>
